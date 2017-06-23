@@ -32,7 +32,7 @@ public class BufferedCanvasTest {
         BufferedImage image = Tests.readImageResource("/gwb1.jpg");
         BufferedCanvas canvas = BufferedCanvas.from(image);
 
-        int[] data = canvas.getData();
+        int[] data = canvas.getRgbaData();
         int numChannels = 3 + 1;
         assertEquals("dimensions", image.getWidth() * image.getHeight() * numChannels, data.length);
         int[] expected = {146, 146, 146, 255, 146, 146, 146, 255};

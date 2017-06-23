@@ -1,6 +1,7 @@
 package com.github.mike10004.requeryface;
 
 public class Detection {
+
     public double x, y, width, height;
     public int neighbors;
     public double confidence;

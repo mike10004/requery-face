@@ -12,18 +12,15 @@ package com.github.mike10004.requeryface;
 
 import com.google.common.math.IntMath;
 import com.google.common.primitives.Ints;
-import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
-class ObjectDetector {
-    private final Canvas canvas;
+public class ObjectDetector {
+
+    private final Canvas<?> canvas;
     private final Cascade cascade;
     private final int interval;
     private final int min_neighbors;
@@ -31,7 +28,7 @@ class ObjectDetector {
     private final int next;
     private final int scale_upto;
 
-    public ObjectDetector(Canvas canvas, Cascade cascade, int interval, int min_neighbors) {
+    public ObjectDetector(Canvas<?> canvas, Cascade cascade, int interval, int min_neighbors) {
         this.canvas = canvas;
         this.cascade = cascade;
         this.interval = interval;
@@ -43,45 +40,55 @@ class ObjectDetector {
         cascade.storeFeaturesInClassifiers();
     }
 
-    public Canvas[] pre() {
+    public Canvas[] prepare() {
         Canvas[] pyr = new Canvas[(scale_upto + next * 2) * 4];
         Canvas[] ret = new Canvas[(scale_upto + next * 2) * 4];
         pyr[0] = canvas;
-        ret[0] = newCanvas(pyr[0].width, pyr[0].height, pyr[0].getContext("2d").getImageData(0, 0, pyr[0].width, pyr[0].height));
+        ret[0] = newCanvas(pyr[0].width, pyr[0].height, pyr[0].getSubimage(0, 0, pyr[0].width, pyr[0].height));
 
         for (int i = 1; i <= interval; i++) {
             pyr[i * 4] = newCanvas((int) Math.floor(pyr[0].width / Math.pow(scale, i)), (int) Math.floor(pyr[0].height / Math.pow(scale, i)));
-            pyr[i * 4].getContext("2d").drawImage(pyr[0], 0, 0, pyr[0].width, pyr[0].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
-            ret[i * 4] = newCanvas(pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getContext("2d").getImageData(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
+            pyr[i * 4].drawImage(pyr[0], 0, 0, pyr[0].width, pyr[0].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
+            ret[i * 4] = newCanvas(pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
         }
         for (int i = next; i < scale_upto + next * 2; i++) {
             pyr[i * 4] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4].getContext("2d").drawImage(pyr[i * 4 - next * 4], 0, 0, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
-            ret[i * 4] = newCanvas(pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getContext("2d").getImageData(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
+            pyr[i * 4].drawImage(pyr[i * 4 - next * 4], 0, 0, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
+            ret[i * 4] = newCanvas(pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
         }
         for (int i = next * 2; i < scale_upto + next * 2; i++) {
             pyr[i * 4 + 1] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4 + 1].getContext("2d").drawImage(pyr[i * 4 - next * 4], 1, 0, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4 + 1].width - 2, pyr[i * 4 + 1].height);
-            ret[i * 4 + 1] = newCanvas(pyr[i * 4 + 1].width, pyr[i * 4 + 1].height, pyr[i * 4 + 1].getContext("2d").getImageData(0, 0, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height) );
+            pyr[i * 4 + 1].drawImage(pyr[i * 4 - next * 4], 1, 0, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4 + 1].width - 2, pyr[i * 4 + 1].height);
+            ret[i * 4 + 1] = newCanvas(pyr[i * 4 + 1].width, pyr[i * 4 + 1].height, pyr[i * 4 + 1].getSubimage(0, 0, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height) );
             pyr[i * 4 + 2] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4 + 2].getContext("2d").drawImage(pyr[i * 4 - next * 4], 0, 1, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height - 2);
-            ret[i * 4 + 2] = newCanvas(pyr[i * 4 + 2].width, pyr[i * 4 + 2].height, pyr[i * 4 + 2].getContext("2d").getImageData(0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height) );
+            pyr[i * 4 + 2].drawImage(pyr[i * 4 - next * 4], 0, 1, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height - 2);
+            ret[i * 4 + 2] = newCanvas(pyr[i * 4 + 2].width, pyr[i * 4 + 2].height, pyr[i * 4 + 2].getSubimage(0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height) );
             pyr[i * 4 + 3] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4 + 3].getContext("2d").drawImage(pyr[i * 4 - next * 4], 1, 1, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 3].width - 2, pyr[i * 4 + 3].height - 2);
-            ret[i * 4 + 3] = newCanvas(pyr[i * 4 + 3].width, pyr[i * 4 + 3].height, pyr[i * 4 + 3].getContext("2d").getImageData(0, 0, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height) );
+            pyr[i * 4 + 3].drawImage(pyr[i * 4 - next * 4], 1, 1, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 3].width - 2, pyr[i * 4 + 3].height - 2);
+            ret[i * 4 + 3] = newCanvas(pyr[i * 4 + 3].width, pyr[i * 4 + 3].height, pyr[i * 4 + 3].getSubimage(0, 0, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height) );
         }
         return ret;
     }
 
-    private Canvas newCanvas(int width, int height, BufferedImage imageData) {
-        BufferedCanvas canvas = new BufferedCanvas(width, height, imageData);
-        return canvas;
+    private static <T> Canvas<T> newCanvas(Canvas<T> old, int width, int height, T data) {
+        return old.createCanvas(width, height, data);
     }
 
-    private Canvas newCanvas(int width, int height) {
-        return new BufferedCanvas(width, height);
+    private static <T> Canvas<T> newCanvas(Canvas<T> old, int width, int height) {
+        return old.createCanvas(width, height);
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> Canvas<T> newCanvas(int width, int height, T imageData) {
+        return newCanvas((Canvas<T>) canvas, width, height, imageData);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Canvas<T> newCanvas(int width, int height) {
+        return newCanvas((Canvas<T>)canvas, width, height);
+    }
+
+    @SuppressWarnings("SameParameterValue")
     private static int get(int[] array, int index, int defaultValue) {
         if (index >= 0 && index < array.length) {
             return array[index];
@@ -90,12 +97,11 @@ class ObjectDetector {
         }
     }
 
-    public List<Detection> core(Canvas[] pyr) {
+    public List<Detection> analyze(Canvas<?>[] pyr) {
         float scale_x = 1, scale_y = 1;
         int[] dx = new int[]{0, 1, 0, 1};
         int[] dy = new int[]{0, 0, 1, 1};
         List<Detection> seq = new ArrayList<>();
-//        int numShortcuts = 0;
         for (int i = 0; i < scale_upto; i++) {
             int qw = pyr[i * 4 + next * 8].width - (int) Math.floor(cascade.width / 4);
             int qh = pyr[i * 4 + next * 8].height - (int) Math.floor(cascade.height / 4);
@@ -113,23 +119,12 @@ class ObjectDetector {
                         feature[k].pz[q] = orig_feature[k].pz[q];
                         feature[k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * get(step, orig_feature[k].nz[q], 0);
                         feature[k].nz[q] = orig_feature[k].nz[q];
-
-//                        // [MC] why no py or ny?
-//                        feature[k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * step[orig_feature[k].pz[q]];
-//                        feature[k].pz[q] = orig_feature[k].pz[q];
-//                        int step_idx = orig_feature[k].nz[q];
-//                        if (!(step_idx >= 0 && step_idx < step.length)) {
-//                            checkState(step_idx >= 0 && step_idx < step.length, "step_idx = %s; orig_feature[%s].nz = %s (index %s)", step_idx, k, Arrays.toString(orig_feature[k].nz), q);
-//                        }
-//                        feature[k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * step[step_idx];
-//                        feature[k].nz[q] = orig_feature[k].nz[q];
                     }
                 }
             }
             for (int q = 0; q < 4; q++) {
-                int[] pyri4Data = pyr[i * 4].getData();
-//                System.out.format("pyr[i * 4].data %s%n", Arrays.toString(Arrays.copyOf(pyri4Data, 8)));
-                int[][] u8 = new int[][]{pyri4Data, pyr[i * 4 + next * 4].getData(), pyr[i * 4 + next * 8 + q].getData()};
+                int[] pyri4Data = pyr[i * 4].getRgbaData();
+                int[][] u8 = new int[][]{pyri4Data, pyr[i * 4 + next * 4].getRgbaData(), pyr[i * 4 + next * 8 + q].getRgbaData()};
                 int[] u8o = new int[]{dx[q] * 8 + dy[q] * pyr[i * 4].width * 8, dx[q] * 4 + dy[q] * pyr[i * 4 + next * 4].width * 4, 0};
                 for (int y = 0; y < qh; y++) {
                     for (int x = 0; x < qw; x++) {
@@ -190,7 +185,6 @@ class ObjectDetector {
                                         }
                                     }
                                     sum += (shortcut) ? alpha[k * 2 + 1] : alpha[k * 2];
-//                                    if (shortcut) numShortcuts++;
                                 }
                             }
                             if (sum < cascade.stage_classifier[j].threshold) {
@@ -218,19 +212,18 @@ class ObjectDetector {
             scale_x *= scale;
             scale_y *= scale;
         }
-//        System.out.format("numShortcuts %d%n", numShortcuts);
         return seq;
     }
 
-    public List<Detection> post(List<Detection> seq) {
+    public List<Detection> clean(List<Detection> seq) {
         int i, j;
         for (i = 0; i < cascade.stage_classifier.length; i++)
             cascade.stage_classifier[i].feature = cascade.stage_classifier[i].orig_feature;
-        // seq = seq[0]; // [MC] are you kidding me? why?
+        // seq = seq[0]; // [MC] how in the world did this work with this line in effect
         if (!(min_neighbors > 0))
             return seq;
         else {
-            ArrayGroup result = CCV.array_group(seq, (r1, r2) -> {
+            Detections.ArrayGroup result = Detections.array_group(seq, (r1, r2) -> {
                 double distance = Math.floor(r1.width * 0.25 + 0.5);
                 return r2.x <= r1.x + distance &&
                         r2.x >= r1.x - distance &&
@@ -242,9 +235,9 @@ class ObjectDetector {
             int ncomp = result.cat;
             int[] idx_seq = result.index;
             Detection[] comps = new Detection[ncomp + 1];
-            for (i = 0; i < comps.length; i++)
+            for (i = 0; i < comps.length; i++) {
                 comps[i] = new Detection();
-
+            }
             // count number of neighbors
             for(i = 0; i < seq.size(); i++)
             {

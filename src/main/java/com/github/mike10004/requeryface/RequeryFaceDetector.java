@@ -5,19 +5,16 @@ import java.util.stream.Collectors;
 
 public class RequeryFaceDetector {
 
-    static class Options {
-        public int interval = 4;
-        public int min_neighbors = 1;
-        public double confidence = 0;
-    }
-
-    public List<Detection> analyze(Canvas canvas, Cascade cascade, Options options) {
-        ObjectDetector detector = new ObjectDetector(canvas, cascade, options.interval, options.min_neighbors);
-        Canvas[] canvasArray = detector.pre();
-        List<Detection> detections = detector.core(canvasArray);
-        detections = detector.post(detections);
+    public List<Detection> detect(Cascade cascade, Canvas<?> canvas, DetectionOptions options) {
+        ObjectDetector detector = createObjectDetector(cascade, canvas, options);
+        Canvas<?>[] canvasArray = detector.prepare();
+        List<Detection> detections = detector.analyze(canvasArray);
+        detections = detector.clean(detections);
         detections = detections.stream().filter(face -> face.confidence >= options.confidence).collect(Collectors.toList());
         return detections;
     }
 
+    protected ObjectDetector createObjectDetector(Cascade cascade, Canvas canvas, DetectionOptions options) {
+        return new ObjectDetector(canvas, cascade, options.interval, options.min_neighbors);
+    }
 }

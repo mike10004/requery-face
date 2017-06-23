@@ -1,22 +1,32 @@
 package com.github.mike10004.requeryface;
 
-class Classifier {
+public class Classifier {
+
+    public final int count;
     public Feature[] orig_feature;
     public Feature[] feature;
-    public int count;
-    public double threshold;
-    public double[] alpha;
+    public final double[] alpha;
+    public final double threshold;
+
+    @SuppressWarnings("unused") // deserialized
+    private Classifier() {
+        count = 0;
+        alpha = null;
+        threshold = Double.NaN;
+    }
+
+    @SuppressWarnings("unused") // deserialized
+    public Classifier(int count, Feature[] feature, double[] alpha, double threshold) {
+        this.count = count;
+        this.feature = feature;
+        this.alpha = alpha;
+        this.threshold = threshold;
+    }
 
     /**
-     * Copies all features into orig_features.
+     * Saves reference to {@link #feature} as {@link #orig_feature}.
      */
     public void storeFeatures() {
-//        if (feature != null) {
-//            orig_feature = new Feature[feature.length];
-//            System.arraycopy(feature, 0, orig_feature, 0, feature.length);
-//        } else {
-//            orig_feature = null;
-//        }
         orig_feature = feature;
     }
 }

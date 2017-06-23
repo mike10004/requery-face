@@ -13,11 +13,7 @@ package com.github.mike10004.requeryface;
 import java.util.List;
 import java.util.function.BiFunction;
 
-class CCV {
-
-    public static Canvas grayscale(Canvas input) {
-        throw new UnsupportedOperationException();
-    }
+class Detections {
 
     private static int tilde(int n) {
         return -(n + 1);
@@ -30,7 +26,6 @@ class CCV {
             node[i] = new Node(seq[i]);
         }
         for (int i = 0; i < seq.length; i++) {
-//                if (!node[i].element)
             if (node[i].element == null) {
                 continue;
             }
@@ -92,5 +87,29 @@ class CCV {
         return new ArrayGroup(idx, class_idx);
     }
 
+    static class Node {
+        public int parent;
+        public Detection element;
+        public int rank;
 
+        public Node(Detection element) {
+            parent = -1;
+            this.element = element;
+            rank = 0;
+        }
+
+        public boolean isElementTruthy() {
+            return element != null;
+        }
+    }
+
+    static class ArrayGroup {
+        public int[] index;
+        public int cat;
+
+        public ArrayGroup(int[] index, int cat) {
+            this.index = index;
+            this.cat = cat;
+        }
+    }
 }
