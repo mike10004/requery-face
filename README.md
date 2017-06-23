@@ -6,7 +6,6 @@ Currently, it's a pretty quick and dirty job. It is *not* any of these things:
 * fast
 * robust
 * thread-safe
-* readable
 * memory-conserving
 
 But if what you're looking for is Java face detection, and you're not all that
