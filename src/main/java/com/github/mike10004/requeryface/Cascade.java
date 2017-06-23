@@ -56,4 +56,69 @@ public class Cascade {
             }
         }
     }
+
+    public static class Feature {
+
+        public final int size;
+        public final int[] px, py, pz, nx, ny, nz;
+
+        @SuppressWarnings("unused") // for deserialization
+        private Feature() {
+            size = 0;
+            px = null;
+            py = null;
+            pz = null;
+            nx = null;
+            ny = null;
+            nz = null;
+        }
+
+        public Feature(int size) {
+            this.size = size;
+            this.px = new int[size];
+            this.pz = new int[size];
+            this.nx = new int[size];
+            this.nz = new int[size];
+            this.ny = new int[size];
+            this.py = new int[size];
+        }
+
+        @Override
+        public String toString() {
+            return "Feature{" +
+                    "size=" + size +
+                    '}';
+        }
+    }
+
+    public static class Classifier {
+
+        public final int count;
+        public Feature[] orig_feature;
+        public Feature[] feature;
+        public final double[] alpha;
+        public final double threshold;
+
+        @SuppressWarnings("unused") // deserialized
+        private Classifier() {
+            count = 0;
+            alpha = null;
+            threshold = Double.NaN;
+        }
+
+        @SuppressWarnings("unused") // deserialized
+        public Classifier(int count, Feature[] feature, double[] alpha, double threshold) {
+            this.count = count;
+            this.feature = feature;
+            this.alpha = alpha;
+            this.threshold = threshold;
+        }
+
+        /**
+         * Saves reference to {@link #feature} as {@link #orig_feature}.
+         */
+        public void storeFeatures() {
+            orig_feature = feature;
+        }
+    }
 }

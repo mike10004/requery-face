@@ -110,10 +110,10 @@ public class ObjectDetector {
                     pyr[i * 4 + next * 4].width * 8 - qw * 8,
                     pyr[i * 4 + next * 8].width * 4 - qw * 4};
             for (int j = 0; j < cascade.stage_classifier.length; j++) {
-                Feature[] orig_feature = cascade.stage_classifier[j].orig_feature;
-                Feature[] feature = cascade.stage_classifier[j].feature = new Feature[cascade.stage_classifier[j].count];
+                Cascade.Feature[] orig_feature = cascade.stage_classifier[j].orig_feature;
+                Cascade.Feature[] feature = cascade.stage_classifier[j].feature = new Cascade.Feature[cascade.stage_classifier[j].count];
                 for (int k = 0; k < cascade.stage_classifier[j].count; k++) {
-                    feature[k] = new Feature(orig_feature[k].size);
+                    feature[k] = new Cascade.Feature(orig_feature[k].size);
                     for (int q = 0; q < orig_feature[k].size; q++) {
                         feature[k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * get(step, orig_feature[k].pz[q], 0);
                         feature[k].pz[q] = orig_feature[k].pz[q];
@@ -133,9 +133,9 @@ public class ObjectDetector {
                         for (int j = 0; j < cascade.stage_classifier.length; j++) {
                             sum = 0;
                             double[] alpha = cascade.stage_classifier[j].alpha;
-                            Feature[] feature = cascade.stage_classifier[j].feature;
+                            Cascade.Feature[] feature = cascade.stage_classifier[j].feature;
                             for (int k = 0; k < cascade.stage_classifier[j].count; k++) {
-                                Feature feature_k = feature[k];
+                                Cascade.Feature feature_k = feature[k];
                                 double pmin;
                                 try {
                                     pmin = u8[feature_k.pz[0]][u8o[feature_k.pz[0]] + feature_k.px[0]];
