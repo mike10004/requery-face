@@ -2,6 +2,7 @@ package com.github.mike10004.requeryface;
 
 import com.google.common.primitives.UnsignedBytes;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
@@ -9,6 +10,11 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.ImageObserver;
 import java.awt.image.PixelGrabber;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -32,41 +38,10 @@ public class BufferedCanvas extends Canvas {
         context = new MyCanvasContext();
     }
 
-    private static class IntImageData extends ImageData {
-
-        private int[] data;
-
-        public IntImageData(int width, int height, int[] data) {
-            super(width, height);
-            this.data = checkNotNull(data);
-        }
-
-        @Override
-        public int[] toIntArray() {
-            return data;
-        }
-    }
-
     private class MyCanvasContext implements CanvasContext {
         @Override
         public BufferedImage getImageData(int x, int y, int width, int height) {
             return image.getSubimage(x, y, width, height);
-//            byte[] byteData;
-//            if (x == 0 && y == 0 && width == 0 && height == 0) {
-//                DataBufferByte buffer = (DataBufferByte) image.getRaster().getDataBuffer();
-//                byteData = buffer.getData();
-//            } else {
-//                int[] pixels = new int[width * height];
-//                PixelGrabber grabber = new PixelGrabber(image, x, y, width, height, pixels, 0, 0);
-//                try {
-//                    grabber.grabPixels();
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//                int[] data = (int[]) grabber.getPixels();
-//                return new IntImageData(width, height, data);
-//            }
-//            return new IntImageData(width, height, fromUnsignedBytesToInts(byteData));
         }
 
         @Override
@@ -87,44 +62,86 @@ public class BufferedCanvas extends Canvas {
         return context;
     }
 
-    static int[] toIntArray(BufferedImage image) {
+    public int[] getByteData() {
         int width = image.getWidth(), height = image.getHeight();
-        int x = 0, y = 0;
         int[] pixels = new int[width * height];
-        PixelGrabber grabber = new PixelGrabber(image, x, y, width, height, pixels, 0, 0);
-        try {
-            grabber.grabPixels();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+//        int x = 0, y = 0;
+//        PixelGrabber grabber = new PixelGrabber(image, x, y, width, height, pixels, 0, 0);
+//        try {
+//            grabber.grabPixels();
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
+//        checkState(grabber.getPixels() == pixels);
+        Raster raster = image.getData();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int gray = raster.getSample(x, y, 0);
+                pixels[y * width + x] = gray;
+            }
         }
-        checkState(grabber.getPixels() == pixels);
+//        for (int i = 0; i < pixels.length; i++) {
+//            pixels[i] =
+//        }
         return pixels;
     }
 
+    /**
+     * Gets data as a sequence of RGBA pixel quartets.
+     * @return
+     */
     @Override
     public int[] getData() {
-        BufferedImage subimage = getContext("2d").getImageData(0, 0, width, height);
-        return toIntArray(subimage);
+        int[] pixels = getByteData();
+        int[] rgbaPixels = new int[pixels.length * 4];
+        Arrays.fill(rgbaPixels, 255);
+        for (int i = 0; i < pixels.length; i++) {
+            rgbaPixels[i * 4 + 0] = pixels[i];
+            rgbaPixels[i * 4 + 1] = pixels[i];
+            rgbaPixels[i * 4 + 2] = pixels[i];
+        }
+        return rgbaPixels;
     }
 
-    static int[] fromUnsignedBytesToInts(byte[] data) {
-        int[] idata = new int[data.length];
-        for (int i = 0; i < data.length; i++) {
-            idata[i] = UnsignedBytes.toInt(data[i]);
+    private static int clamp(int gray) {
+        if (gray > 255) {
+            gray = 255;
         }
-        return idata;
+        if (gray < 0) {
+            gray = 0;
+        }
+        return gray;
     }
 
     public static BufferedCanvas from(BufferedImage image) {
         int width = image.getWidth(), height = image.getHeight();
         if (image.getType() != REQUIRED_TYPE) {
-            BufferedImage goodImage = new BufferedImage(width, height, REQUIRED_TYPE);
-            Graphics2D g = goodImage.createGraphics();
-            g.drawImage(image, identity, 0, 0);
-            return new BufferedCanvas(width, height, goodImage);
+            BufferedImage grayImage = new BufferedImage(width, height, REQUIRED_TYPE);
+//            Graphics2D g = grayImage.createGraphics();
+//            g.drawImage(image, identity, 0, 0);
+            Raster raster = image.getRaster();
+            WritableRaster out = grayImage.getRaster();
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int r = raster.getSample(x, y, 0);
+                    int g = raster.getSample(x, y, 1);
+                    int b = raster.getSample(x, y, 2);
+//                    int a = raster.getSample(x, y, 3);
+                    int gray = (int) Math.round(0.30 * r + 0.59 * g + 0.11 * b);
+                    gray = clamp(gray);
+                    out.setSample(x, y, 0, gray);
+                }
+            }
+            return new BufferedCanvas(width, height, grayImage);
         }
         return new BufferedCanvas(width, height, image);
     }
 
     private static final AffineTransformOp identity = new AffineTransformOp(new AffineTransform(), AffineTransformOp.TYPE_BICUBIC);
+
+    public byte[] writePng() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(10 * 1024);
+        ImageIO.write(image, "png", baos);
+        return baos.toByteArray();
+    }
 }

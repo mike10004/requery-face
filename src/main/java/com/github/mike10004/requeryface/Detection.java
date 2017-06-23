@@ -17,4 +17,9 @@ public class Detection {
         this.neighbors = neighbor;
         this.confidence = confidence;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%.0fx%.0f+%.0f+%.0f (%.4f)", width, height, x, y, confidence);
+    }
 }

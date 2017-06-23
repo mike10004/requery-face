@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Hello</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="cascade.js"></script>
+        <script src="ccv.js"></script>
+        <script src="jquery.facedetection.js"></script>
+    </head>
+  <body>
+        <img id="photo" src="gwb1.jpg">
+        <script>
+$(document).ready(function(){
+    console.log('ready');
+    $('#photo').faceDetection({
+        complete: function(results) {
+            console.debug(results);
+            var face = results[0];
+            if (face) {
+                console.info('x', Math.round(face.x), 'y', Math.round(face.y));
+                console.info('width', Math.round(face.width), 'height', Math.round(face.height));
+                console.info('confidence', face.confidence);
+            }
+        },
+        error: function(err) {
+            console.warn("faceDetection failure", err);
+        }
+    });
+});
+        </script>
+  </body>
+</html>

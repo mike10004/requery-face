@@ -12,12 +12,15 @@ package com.github.mike10004.requeryface;
 
 import com.google.common.math.IntMath;
 import com.google.common.primitives.Ints;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 class ObjectDetector {
     private final Canvas canvas;
@@ -37,6 +40,7 @@ class ObjectDetector {
         this.scale = Math.pow(2, 1d / (interval + 1d));
         this.next = IntMath.checkedAdd(interval, 1);
         this.scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min(canvas.width / cascade.width, canvas.height / cascade.height)) / Math.log(scale))));
+        cascade.storeFeaturesInClassifiers();
     }
 
     public Canvas[] pre() {
@@ -78,56 +82,89 @@ class ObjectDetector {
         return new BufferedCanvas(width, height);
     }
 
+    private static int get(int[] array, int index, int defaultValue) {
+        if (index >= 0 && index < array.length) {
+            return array[index];
+        } else {
+            return defaultValue;
+        }
+    }
+
     public List<Detection> core(Canvas[] pyr) {
-        int i, j, k, x, y, q;
         float scale_x = 1, scale_y = 1;
         int[] dx = new int[]{0, 1, 0, 1};
         int[] dy = new int[]{0, 0, 1, 1};
         List<Detection> seq = new ArrayList<>();
-        for (i = 0; i < scale_upto; i++) {
+//        int numShortcuts = 0;
+        for (int i = 0; i < scale_upto; i++) {
             int qw = pyr[i * 4 + next * 8].width - (int) Math.floor(cascade.width / 4);
             int qh = pyr[i * 4 + next * 8].height - (int) Math.floor(cascade.height / 4);
             int[] step = new int[]{pyr[i * 4].width * 4, pyr[i * 4 + next * 4].width * 4, pyr[i * 4 + next * 8].width * 4};
             int[] paddings = new int[]{pyr[i * 4].width * 16 - qw * 16,
                     pyr[i * 4 + next * 4].width * 8 - qw * 8,
                     pyr[i * 4 + next * 8].width * 4 - qw * 4};
-            for (j = 0; j < cascade.stage_classifier.length; j++) {
+            for (int j = 0; j < cascade.stage_classifier.length; j++) {
                 Feature[] orig_feature = cascade.stage_classifier[j].orig_feature;
                 Feature[] feature = cascade.stage_classifier[j].feature = new Feature[cascade.stage_classifier[j].count];
-                for (k = 0; k < cascade.stage_classifier[j].count; k++) {
+                for (int k = 0; k < cascade.stage_classifier[j].count; k++) {
                     feature[k] = new Feature(orig_feature[k].size);
-                    for (q = 0; q < orig_feature[k].size; q++) {
-                        // [MC] why no py or ny?
-                        feature[k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * step[orig_feature[k].pz[q]];
+                    for (int q = 0; q < orig_feature[k].size; q++) {
+                        feature[k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * get(step, orig_feature[k].pz[q], 0);
                         feature[k].pz[q] = orig_feature[k].pz[q];
-                        feature[k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * step[orig_feature[k].nz[q]];
+                        feature[k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * get(step, orig_feature[k].nz[q], 0);
                         feature[k].nz[q] = orig_feature[k].nz[q];
+
+//                        // [MC] why no py or ny?
+//                        feature[k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * step[orig_feature[k].pz[q]];
+//                        feature[k].pz[q] = orig_feature[k].pz[q];
+//                        int step_idx = orig_feature[k].nz[q];
+//                        if (!(step_idx >= 0 && step_idx < step.length)) {
+//                            checkState(step_idx >= 0 && step_idx < step.length, "step_idx = %s; orig_feature[%s].nz = %s (index %s)", step_idx, k, Arrays.toString(orig_feature[k].nz), q);
+//                        }
+//                        feature[k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * step[step_idx];
+//                        feature[k].nz[q] = orig_feature[k].nz[q];
                     }
                 }
             }
-            for (q = 0; q < 4; q++) {
-                int[][] u8 = new int[][]{pyr[i * 4].getData(), pyr[i * 4 + next * 4].getData(), pyr[i * 4 + next * 8 + q].getData()};
+            for (int q = 0; q < 4; q++) {
+                int[] pyri4Data = pyr[i * 4].getData();
+//                System.out.format("pyr[i * 4].data %s%n", Arrays.toString(Arrays.copyOf(pyri4Data, 8)));
+                int[][] u8 = new int[][]{pyri4Data, pyr[i * 4 + next * 4].getData(), pyr[i * 4 + next * 8 + q].getData()};
                 int[] u8o = new int[]{dx[q] * 8 + dy[q] * pyr[i * 4].width * 8, dx[q] * 4 + dy[q] * pyr[i * 4 + next * 4].width * 4, 0};
-                for (y = 0; y < qh; y++) {
-                    for (x = 0; x < qw; x++) {
+                for (int y = 0; y < qh; y++) {
+                    for (int x = 0; x < qw; x++) {
                         double sum = 0;
                         boolean flag = true;
-                        for (j = 0; j < cascade.stage_classifier.length; j++) {
+                        for (int j = 0; j < cascade.stage_classifier.length; j++) {
                             sum = 0;
                             double[] alpha = cascade.stage_classifier[j].alpha;
                             Feature[] feature = cascade.stage_classifier[j].feature;
-                            for (k = 0; k < cascade.stage_classifier[j].count; k++) {
+                            for (int k = 0; k < cascade.stage_classifier[j].count; k++) {
                                 Feature feature_k = feature[k];
-                                int p, pmin = u8[feature_k.pz[0]][u8o[feature_k.pz[0]] + feature_k.px[0]];
-                                int n, nmax = u8[feature_k.nz[0]][u8o[feature_k.nz[0]] + feature_k.nx[0]];
+                                double pmin;
+                                try {
+                                    pmin = u8[feature_k.pz[0]][u8o[feature_k.pz[0]] + feature_k.px[0]];
+                                } catch (ArrayIndexOutOfBoundsException e) {
+                                    pmin = Double.NaN;
+                                }
+                                double nmax;
+                                try {
+                                    nmax = u8[feature_k.nz[0]][u8o[feature_k.nz[0]] + feature_k.nx[0]];
+                                } catch (ArrayIndexOutOfBoundsException e) {
+                                    nmax = Double.NaN;
+                                }
                                 if (pmin <= nmax) {
                                     sum += alpha[k * 2];
                                 } else {
-                                    int f;
                                     boolean shortcut = true;
-                                    for (f = 0; f < feature_k.size; f++) {
+                                    for (int f = 0; f < feature_k.size; f++) {
                                         if (feature_k.pz[f] >= 0) {
-                                            p = u8[feature_k.pz[f]][u8o[feature_k.pz[f]] + feature_k.px[f]];
+                                            double p;
+                                            try {
+                                                p = u8[feature_k.pz[f]][u8o[feature_k.pz[f]] + feature_k.px[f]];
+                                            } catch (ArrayIndexOutOfBoundsException e) {
+                                                p = Double.NaN;
+                                            }
                                             if (p < pmin) {
                                                 if (p <= nmax) {
                                                     shortcut = false;
@@ -137,7 +174,12 @@ class ObjectDetector {
                                             }
                                         }
                                         if (feature_k.nz[f] >= 0) {
-                                            n = u8[feature_k.nz[f]][u8o[feature_k.nz[f]] + feature_k.nx[f]];
+                                            double n;
+                                            try {
+                                                n = u8[feature_k.nz[f]][u8o[feature_k.nz[f]] + feature_k.nx[f]];
+                                            } catch (ArrayIndexOutOfBoundsException e) {
+                                                n = Double.NaN;
+                                            }
                                             if (n > nmax) {
                                                 if (pmin <= n) {
                                                     shortcut = false;
@@ -148,6 +190,7 @@ class ObjectDetector {
                                         }
                                     }
                                     sum += (shortcut) ? alpha[k * 2 + 1] : alpha[k * 2];
+//                                    if (shortcut) numShortcuts++;
                                 }
                             }
                             if (sum < cascade.stage_classifier[j].threshold) {
@@ -175,6 +218,7 @@ class ObjectDetector {
             scale_x *= scale;
             scale_y *= scale;
         }
+//        System.out.format("numShortcuts %d%n", numShortcuts);
         return seq;
     }
 

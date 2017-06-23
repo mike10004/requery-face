@@ -15,19 +15,22 @@ class Cascade {
     public Classifier[] stage_classifier;
 
     public static Cascade getDefault() {
-        synchronized (lock) {
-            if (defaultInstance == null) {
-                try (Reader reader = new InputStreamReader(Cascade.class.getResourceAsStream("/default-cascade.json"), StandardCharsets.UTF_8)) {
-                    defaultInstance = new Gson().fromJson(reader, Cascade.class);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            }
-            return defaultInstance;
+        try (Reader reader = new InputStreamReader(Cascade.class.getResourceAsStream("/default-cascade.json"), StandardCharsets.UTF_8)) {
+            return new Gson().fromJson(reader, Cascade.class);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
     private static final Object lock = new Object();
 
     private static Cascade defaultInstance;
+
+    public void storeFeaturesInClassifiers() {
+        if (stage_classifier != null) {
+            for (Classifier aStage_classifier : stage_classifier) {
+                aStage_classifier.storeFeatures();
+            }
+        }
+    }
 }

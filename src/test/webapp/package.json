@@ -1,0 +1,20 @@
+{
+  "name": "requery-test-environment",
+  "version": "0.0.1",
+  "description": "Testing webapp for requery",
+  "keywords": [
+    "template",
+    "benchmark"
+  ],
+  "repository": "https://github.com/mike10004/requery-face.git",
+  "homepage": "https://github.com/mike10004/requery-face",
+  "author": "Mike Chaberski <mchaberski@gmail.com>",
+  "dependencies": {
+    "jquery.facedetection": "^2.0.2",
+    "light-server": "^2.0.2"
+  },
+  "license": "BSD-3-Clause",
+  "scripts": {
+    "serve": "light-server --port 8098 --serve app"
+  }
+}
