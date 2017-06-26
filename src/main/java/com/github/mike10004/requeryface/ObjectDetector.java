@@ -12,70 +12,55 @@ package com.github.mike10004.requeryface;
 
 import com.github.mike10004.requeryface.Cascade.Classifier;
 import com.github.mike10004.requeryface.Cascade.Feature;
-import com.google.common.collect.ImmutableList;
 import com.google.common.math.IntMath;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class ObjectDetector {
 
-    private final Canvas<?> canvas;
     private final int interval;
     private final int min_neighbors;
     private final double scale;
-    private final int next;
-    private final int scale_upto;
 
-    public ObjectDetector(Canvas<?> canvas, Cascade cascade, int interval, int min_neighbors) {
-        this(canvas, cascade.width, cascade.height, interval, min_neighbors);
-    }
-
-    public ObjectDetector(Canvas<?> canvas, int cascadeWidth, int cascadeHeight, int interval, int min_neighbors) {
-        this.canvas = canvas;
+    public ObjectDetector(int interval, int min_neighbors) {
         this.interval = interval;
         this.min_neighbors = min_neighbors;
         checkArgument(min_neighbors >= 0, "min_neighbors >= 0 required");
         this.scale = Math.pow(2, 1d / (interval + 1d));
-        this.next = IntMath.checkedAdd(interval, 1);
-        this.scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min(canvas.width / cascadeWidth, canvas.height / cascadeHeight)) / Math.log(scale))));
-        // TODO: use line below where canvas/cascade dimension proportions are computed using floating point arithmetic instead of int arithmetic (truncation)
-//        this.scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min((double) canvas.width / (double) cascadeWidth, (double) canvas.height / (double) cascadeHeight)) / Math.log(scale))));
-//        cascade.storeFeaturesInClassifiers();
     }
 
-    public Canvas[] prepare() {
-        Canvas[] pyr = new Canvas[(scale_upto + next * 2) * 4];
-        Canvas[] ret = new Canvas[(scale_upto + next * 2) * 4];
+    protected <T> Canvas<T>[] prepare(Canvas<T> canvas, int scale_upto, int next) {
+        @SuppressWarnings("unchecked")
+        Canvas<T>[] pyr = new Canvas[(scale_upto + next * 2) * 4];
+        @SuppressWarnings("unchecked")
+        Canvas<T>[] ret = new Canvas[(scale_upto + next * 2) * 4];
         pyr[0] = canvas;
-        ret[0] = newCanvas(pyr[0].width, pyr[0].height, pyr[0].getSubimage(0, 0, pyr[0].width, pyr[0].height));
+        ret[0] = newCanvas(canvas, pyr[0].width, pyr[0].height, pyr[0].getSubimage(0, 0, pyr[0].width, pyr[0].height));
 
         for (int i = 1; i <= interval; i++) {
-            pyr[i * 4] = newCanvas((int) Math.floor(pyr[0].width / Math.pow(scale, i)), (int) Math.floor(pyr[0].height / Math.pow(scale, i)));
+            pyr[i * 4] = newCanvas(canvas, (int) Math.floor(pyr[0].width / Math.pow(scale, i)), (int) Math.floor(pyr[0].height / Math.pow(scale, i)));
             pyr[i * 4].drawImage(pyr[0], 0, 0, pyr[0].width, pyr[0].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
-            ret[i * 4] = newCanvas(pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
+            ret[i * 4] = newCanvas(canvas, pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
         }
         for (int i = next; i < scale_upto + next * 2; i++) {
-            pyr[i * 4] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
+            pyr[i * 4] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
             pyr[i * 4].drawImage(pyr[i * 4 - next * 4], 0, 0, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
-            ret[i * 4] = newCanvas(pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
+            ret[i * 4] = newCanvas(canvas, pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
         }
         for (int i = next * 2; i < scale_upto + next * 2; i++) {
-            pyr[i * 4 + 1] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
+            pyr[i * 4 + 1] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
             pyr[i * 4 + 1].drawImage(pyr[i * 4 - next * 4], 1, 0, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4 + 1].width - 2, pyr[i * 4 + 1].height);
-            ret[i * 4 + 1] = newCanvas(pyr[i * 4 + 1].width, pyr[i * 4 + 1].height, pyr[i * 4 + 1].getSubimage(0, 0, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height) );
-            pyr[i * 4 + 2] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
+            ret[i * 4 + 1] = newCanvas(canvas, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height, pyr[i * 4 + 1].getSubimage(0, 0, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height) );
+            pyr[i * 4 + 2] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
             pyr[i * 4 + 2].drawImage(pyr[i * 4 - next * 4], 0, 1, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height - 2);
-            ret[i * 4 + 2] = newCanvas(pyr[i * 4 + 2].width, pyr[i * 4 + 2].height, pyr[i * 4 + 2].getSubimage(0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height) );
-            pyr[i * 4 + 3] = newCanvas((int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
+            ret[i * 4 + 2] = newCanvas(canvas, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height, pyr[i * 4 + 2].getSubimage(0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height) );
+            pyr[i * 4 + 3] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
             pyr[i * 4 + 3].drawImage(pyr[i * 4 - next * 4], 1, 1, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 3].width - 2, pyr[i * 4 + 3].height - 2);
-            ret[i * 4 + 3] = newCanvas(pyr[i * 4 + 3].width, pyr[i * 4 + 3].height, pyr[i * 4 + 3].getSubimage(0, 0, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height) );
+            ret[i * 4 + 3] = newCanvas(canvas, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height, pyr[i * 4 + 3].getSubimage(0, 0, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height) );
         }
         return ret;
     }
@@ -88,16 +73,6 @@ public class ObjectDetector {
         return old.createCanvas(width, height);
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> Canvas<T> newCanvas(int width, int height, T imageData) {
-        return newCanvas((Canvas<T>) canvas, width, height, imageData);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> Canvas<T> newCanvas(int width, int height) {
-        return newCanvas((Canvas<T>)canvas, width, height);
-    }
-
     @SuppressWarnings("SameParameterValue")
     private static int get(int[] array, int index, int defaultValue) {
         if (index >= 0 && index < array.length) {
@@ -107,12 +82,18 @@ public class ObjectDetector {
         }
     }
 
-    public List<Detection> analyze(Canvas<?>[] pyr, Cascade cascade) {
+    @SuppressWarnings("ConstantConditions")
+    public List<Detection> analyze(Canvas<?> canvas, Cascade cascade) {
+        int next = IntMath.checkedAdd(interval, 1);
+        int scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min(canvas.width / cascade.width, canvas.height/ cascade.height)) / Math.log(scale))));
+        // TODO: use line below where canvas/cascade dimension proportions are computed using floating point arithmetic instead of int arithmetic (truncation)
+//        int scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min((double) canvas.width / (double) cascadeWidth, (double) canvas.height / (double) cascadeHeight)) / Math.log(scale))));
+        Canvas<?>[] pyr = prepare(canvas, scale_upto, next);
         float scale_x = 1, scale_y = 1;
         int[] dx = new int[]{0, 1, 0, 1};
         int[] dy = new int[]{0, 0, 1, 1};
         List<Detection> seq = new ArrayList<>();
-        Classifier[] stage_classifier = cascade.getStageClassifiers().toArray(new Classifier[0]);
+        Classifier[] stage_classifier = cascade.copyStageClassifiers();
         Feature[][] orig_feature_aa = new Feature[stage_classifier.length][];
         for (int j = 0; j < stage_classifier.length; j++) {
             orig_feature_aa[j] = stage_classifier[j].copyFeatures();
@@ -148,7 +129,6 @@ public class ObjectDetector {
                         boolean flag = true;
                         for (int j = 0; j < stage_classifier.length; j++) {
                             sum = 0;
-                            double[] alpha = stage_classifier[j].alpha;
                             Feature[] feature = current_feature_aa[j];
                             for (int k = 0; k < stage_classifier[j].count; k++) {
                                 Feature feature_k = feature[k];
@@ -165,7 +145,7 @@ public class ObjectDetector {
                                     nmax = Double.NaN;
                                 }
                                 if (pmin <= nmax) {
-                                    sum += alpha[k * 2];
+                                    sum += stage_classifier[j].getAlpha(k * 2);
                                 } else {
                                     boolean shortcut = true;
                                     for (int f = 0; f < feature_k.size; f++) {
@@ -200,7 +180,7 @@ public class ObjectDetector {
                                             }
                                         }
                                     }
-                                    sum += (shortcut) ? alpha[k * 2 + 1] : alpha[k * 2];
+                                    sum += (shortcut) ? stage_classifier[j].getAlpha(k * 2 + 1) : stage_classifier[j].getAlpha(k * 2);
                                 }
                             }
                             if (sum < stage_classifier[j].threshold) {
@@ -228,10 +208,10 @@ public class ObjectDetector {
             scale_x *= scale;
             scale_y *= scale;
         }
-        return seq;
+        return clean(seq);
     }
 
-    public List<Detection> clean(List<Detection> seq) {
+    protected List<Detection> clean(List<Detection> seq) {
         int i, j;
         if (!(min_neighbors > 0))
             return seq;

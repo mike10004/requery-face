@@ -1,17 +1,16 @@
 package com.github.mike10004.requeryface.client;
 
 import com.github.mike10004.requeryface.BufferedCanvas;
-import com.github.mike10004.requeryface.Canvas;
-import com.github.mike10004.requeryface.Cascade;
 import com.github.mike10004.requeryface.Detection;
-import com.github.mike10004.requeryface.RequeryFaceDetector;
 import com.github.mike10004.requeryface.DetectionOptions;
+import com.github.mike10004.requeryface.RequeryFaceDetector;
 import com.github.mike10004.requeryface.Tests;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RequeryFaceDetectorTest {
 
@@ -19,9 +18,8 @@ public class RequeryFaceDetectorTest {
     public void analyze() throws Exception {
         RequeryFaceDetector detector = new RequeryFaceDetector();
         BufferedImage image = Tests.readImageResource("/gwb1.jpg");
-        Cascade cascade = Cascade.getDefault();
         long startTime = System.currentTimeMillis();
-        List<Detection> detections = detector.detect(cascade, BufferedCanvas.from(image), DetectionOptions.getDefault());
+        List<Detection> detections = detector.detect(BufferedCanvas.from(image), DetectionOptions.getDefault());
         long endTime = System.currentTimeMillis();
         System.out.format("%d detections in %.1f seconds%n", detections.size(), (endTime - startTime) / 1000f);
         assertEquals("num detections", 1, detections.size());

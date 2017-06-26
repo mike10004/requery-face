@@ -1,6 +1,5 @@
 package com.github.mike10004.requeryface;
 
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -10,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Class that represents a cascade classifier.
@@ -38,7 +38,6 @@ public class Cascade {
 
     /**
      * Loads the default pre-populated classifier from a resource.
-     * The object is mutated during processing, so don't try to reuse it.
      * @return the cascade
      */
     public static Cascade getDefault() {
@@ -49,11 +48,11 @@ public class Cascade {
         }
     }
 
-    public ImmutableList<Classifier> getStageClassifiers() {
-        assert stage_classifier != null;
+    public Classifier[] copyStageClassifiers() {
+        checkState(stage_classifier != null, "stage_classifier is null");
         return Stream.of(stage_classifier)
-                .map(sc -> new Classifier(sc.count, sc.copyFeatures(), sc.alpha.clone(), sc.threshold))
-                .collect(ImmutableList.toImmutableList());
+                .map(Classifier::copy)
+                .toArray(Classifier[]::new);
     }
 
     public static class Feature {
@@ -102,16 +101,19 @@ public class Cascade {
 
         public final int count;
         private final Feature[] feature;
-        public final double[] alpha;
+        private final double[] alpha;
         public final double threshold;
 
         @SuppressWarnings("unused") // deserialized
         private Classifier() {
             count = 0;
-            alpha = null;
+            alpha = EMPTY_DOUBLE;
             threshold = Double.NaN;
-            feature = null;
+            feature = EMPTY_FEATURE;
         }
+
+        private static final double[] EMPTY_DOUBLE = new double[0];
+        private static final Feature[] EMPTY_FEATURE = new Feature[0];
 
         @SuppressWarnings("unused") // deserialized
         public Classifier(int count, Feature[] feature, double[] alpha, double threshold) {
@@ -123,6 +125,14 @@ public class Cascade {
 
         public Feature[] copyFeatures() {
             return Stream.of(feature).map(Feature::copy).toArray(Feature[]::new);
+        }
+
+        public Classifier copy() {
+            return new Classifier(count, copyFeatures(), alpha, threshold);
+        }
+
+        public double getAlpha(int k) {
+            return alpha[k];
         }
     }
 }

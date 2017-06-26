@@ -61,8 +61,7 @@ public class Annotate {
                 detectionListener.detectingFaces(imageFile);
                 BufferedImage image = ImageIO.read(imageFile);
                 RequeryFaceDetector detector = new RequeryFaceDetector();
-                Cascade cascade = Cascade.getDefault();
-                List<Detection> detections = detector.detect(cascade, BufferedCanvas.from(image), DetectionOptions.getDefault());
+                List<Detection> detections = detector.detect(BufferedCanvas.from(image), DetectionOptions.getDefault());
                 detectionListener.facesDetected(imageFile, image, detections);
             }
 
