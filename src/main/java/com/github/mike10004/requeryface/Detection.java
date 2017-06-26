@@ -4,20 +4,16 @@ import com.google.common.math.DoubleMath;
 
 public class Detection {
 
-    public double x, y, width, height;
-    public int neighbors;
-    public double confidence;
+    public final double x, y, width, height;
+    public final int neighbors;
+    public final double confidence;
 
-    public Detection() {
-        this(0, 0, 0, 0, 0, 0);
-    }
-
-    public Detection(double x, double y, double width, double height, int neighbor, double confidence) {
+    public Detection(double x, double y, double width, double height, int neighbors, double confidence) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.neighbors = neighbor;
+        this.neighbors = neighbors;
         this.confidence = confidence;
     }
 

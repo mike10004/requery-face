@@ -85,9 +85,7 @@ public class ObjectDetector {
     @SuppressWarnings("ConstantConditions")
     public List<Detection> analyze(Canvas<?> canvas, Cascade cascade) {
         int next = IntMath.checkedAdd(interval, 1);
-        int scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min(canvas.width / cascade.width, canvas.height/ cascade.height)) / Math.log(scale))));
-        // TODO: use line below where canvas/cascade dimension proportions are computed using floating point arithmetic instead of int arithmetic (truncation)
-//        int scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min((double) canvas.width / (double) cascadeWidth, (double) canvas.height / (double) cascadeHeight)) / Math.log(scale))));
+        int scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min((double) canvas.width / (double) cascade.width, (double) canvas.height/ (double) cascade.height)) / Math.log(scale))));
         Canvas<?>[] pyr = prepare(canvas, scale_upto, next);
         float scale_x = 1, scale_y = 1;
         int[] dx = new int[]{0, 1, 0, 1};
@@ -211,11 +209,15 @@ public class ObjectDetector {
         return clean(seq);
     }
 
+    private static class DetectionAccumulator {
+        public double x, y, width, height, confidence;
+        public int neighbors;
+    }
+
     protected List<Detection> clean(List<Detection> seq) {
-        int i, j;
-        if (!(min_neighbors > 0))
+        if (!(min_neighbors > 0)) {
             return seq;
-        else {
+        } else {
             Detections.ArrayGroup result = Detections.array_group(seq, (r1, r2) -> {
                 double distance = Math.floor(r1.width * 0.25 + 0.5);
                 return r2.x <= r1.x + distance &&
@@ -227,12 +229,12 @@ public class ObjectDetector {
             });
             int ncomp = result.cat;
             int[] idx_seq = result.index;
-            Detection[] comps = new Detection[ncomp + 1];
-            for (i = 0; i < comps.length; i++) {
-                comps[i] = new Detection();
+            DetectionAccumulator[] comps = new DetectionAccumulator[ncomp + 1];
+            for (int i = 0; i < comps.length; i++) {
+                comps[i] = new DetectionAccumulator();
             }
             // count number of neighbors
-            for(i = 0; i < seq.size(); i++)
+            for (int i = 0; i < seq.size(); i++)
             {
                 Detection r1 = seq.get(i);
                 int idx = idx_seq[i];
@@ -251,8 +253,7 @@ public class ObjectDetector {
 
             List<Detection> seq2 = new ArrayList<>();
             // calculate average bounding box
-            for(i = 0; i < ncomp; i++)
-            {
+            for (int i = 0; i < ncomp; i++) {
                 int n = comps[i].neighbors;
                 if (n >= min_neighbors)
                     seq2.add(new Detection((comps[i].x * 2 + n) / (2 * n),
@@ -265,16 +266,14 @@ public class ObjectDetector {
 
             List<Detection> result_seq = new ArrayList<>();
             // filter out small face rectangles inside large face rectangles
-            for(i = 0; i < seq2.size(); i++)
-            {
+            for (int i = 0; i < seq2.size(); i++) {
                 Detection r1 = seq2.get(i);
                 boolean flag = true;
-                for(j = 0; j < seq2.size(); j++)
-                {
+                for (int j = 0; j < seq2.size(); j++) {
                     Detection r2 = seq2.get(j);
                     double distance = Math.floor(r2.width * 0.25 + 0.5);
 
-                    if(i != j &&
+                    if (i != j &&
                             r1.x >= r2.x - distance &&
                             r1.y >= r2.y - distance &&
                             r1.x + r1.width <= r2.x + r2.width + distance &&
@@ -285,9 +284,9 @@ public class ObjectDetector {
                         break;
                     }
                 }
-
-                if(flag)
+                if (flag) {
                     result_seq.add(r1);
+                }
             }
             return result_seq;
         }
