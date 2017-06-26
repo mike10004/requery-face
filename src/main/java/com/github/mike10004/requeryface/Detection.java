@@ -43,7 +43,7 @@ public class Detection {
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
-    public boolean equals(Detection detection, double tolerance) {
+    public boolean fuzzyEquals(Detection detection, double tolerance) {
         if (equals(detection)) {
             return true;
         }

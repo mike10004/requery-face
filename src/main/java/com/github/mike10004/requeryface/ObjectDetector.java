@@ -10,18 +10,23 @@ Redistribution and use in source and binary forms, with or without modification,
 */
 package com.github.mike10004.requeryface;
 
+import com.github.mike10004.requeryface.Cascade.Classifier;
+import com.github.mike10004.requeryface.Cascade.Feature;
+import com.google.common.collect.ImmutableList;
 import com.google.common.math.IntMath;
 import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class ObjectDetector {
 
     private final Canvas<?> canvas;
-    private final Cascade cascade;
     private final int interval;
     private final int min_neighbors;
     private final double scale;
@@ -29,15 +34,20 @@ public class ObjectDetector {
     private final int scale_upto;
 
     public ObjectDetector(Canvas<?> canvas, Cascade cascade, int interval, int min_neighbors) {
+        this(canvas, cascade.width, cascade.height, interval, min_neighbors);
+    }
+
+    public ObjectDetector(Canvas<?> canvas, int cascadeWidth, int cascadeHeight, int interval, int min_neighbors) {
         this.canvas = canvas;
-        this.cascade = cascade;
         this.interval = interval;
         this.min_neighbors = min_neighbors;
         checkArgument(min_neighbors >= 0, "min_neighbors >= 0 required");
         this.scale = Math.pow(2, 1d / (interval + 1d));
         this.next = IntMath.checkedAdd(interval, 1);
-        this.scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min(canvas.width / cascade.width, canvas.height / cascade.height)) / Math.log(scale))));
-        cascade.storeFeaturesInClassifiers();
+        this.scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min(canvas.width / cascadeWidth, canvas.height / cascadeHeight)) / Math.log(scale))));
+        // TODO: use line below where canvas/cascade dimension proportions are computed using floating point arithmetic instead of int arithmetic (truncation)
+//        this.scale_upto = Ints.checkedCast(Math.round(Math.floor(Math.log(Math.min((double) canvas.width / (double) cascadeWidth, (double) canvas.height / (double) cascadeHeight)) / Math.log(scale))));
+//        cascade.storeFeaturesInClassifiers();
     }
 
     public Canvas[] prepare() {
@@ -97,11 +107,17 @@ public class ObjectDetector {
         }
     }
 
-    public List<Detection> analyze(Canvas<?>[] pyr) {
+    public List<Detection> analyze(Canvas<?>[] pyr, Cascade cascade) {
         float scale_x = 1, scale_y = 1;
         int[] dx = new int[]{0, 1, 0, 1};
         int[] dy = new int[]{0, 0, 1, 1};
         List<Detection> seq = new ArrayList<>();
+        Classifier[] stage_classifier = cascade.getStageClassifiers().toArray(new Classifier[0]);
+        Feature[][] orig_feature_aa = new Feature[stage_classifier.length][];
+        for (int j = 0; j < stage_classifier.length; j++) {
+            orig_feature_aa[j] = stage_classifier[j].copyFeatures();
+        }
+        Feature[][] current_feature_aa = new Feature[stage_classifier.length][];
         for (int i = 0; i < scale_upto; i++) {
             int qw = pyr[i * 4 + next * 8].width - (int) Math.floor(cascade.width / 4);
             int qh = pyr[i * 4 + next * 8].height - (int) Math.floor(cascade.height / 4);
@@ -109,16 +125,16 @@ public class ObjectDetector {
             int[] paddings = new int[]{pyr[i * 4].width * 16 - qw * 16,
                     pyr[i * 4 + next * 4].width * 8 - qw * 8,
                     pyr[i * 4 + next * 8].width * 4 - qw * 4};
-            for (int j = 0; j < cascade.stage_classifier.length; j++) {
-                Cascade.Feature[] orig_feature = cascade.stage_classifier[j].orig_feature;
-                Cascade.Feature[] feature = cascade.stage_classifier[j].feature = new Cascade.Feature[cascade.stage_classifier[j].count];
-                for (int k = 0; k < cascade.stage_classifier[j].count; k++) {
-                    feature[k] = new Cascade.Feature(orig_feature[k].size);
+            for (int j = 0; j < stage_classifier.length; j++) {
+                Feature[] orig_feature = orig_feature_aa[j];
+                current_feature_aa[j] = new Feature[stage_classifier[j].count];
+                for (int k = 0; k < stage_classifier[j].count; k++) {
+                    current_feature_aa[j][k] = new Feature(orig_feature[k].size);
                     for (int q = 0; q < orig_feature[k].size; q++) {
-                        feature[k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * get(step, orig_feature[k].pz[q], 0);
-                        feature[k].pz[q] = orig_feature[k].pz[q];
-                        feature[k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * get(step, orig_feature[k].nz[q], 0);
-                        feature[k].nz[q] = orig_feature[k].nz[q];
+                        current_feature_aa[j][k].px[q] = orig_feature[k].px[q] * 4 + orig_feature[k].py[q] * get(step, orig_feature[k].pz[q], 0);
+                        current_feature_aa[j][k].pz[q] = orig_feature[k].pz[q];
+                        current_feature_aa[j][k].nx[q] = orig_feature[k].nx[q] * 4 + orig_feature[k].ny[q] * get(step, orig_feature[k].nz[q], 0);
+                        current_feature_aa[j][k].nz[q] = orig_feature[k].nz[q];
                     }
                 }
             }
@@ -130,12 +146,12 @@ public class ObjectDetector {
                     for (int x = 0; x < qw; x++) {
                         double sum = 0;
                         boolean flag = true;
-                        for (int j = 0; j < cascade.stage_classifier.length; j++) {
+                        for (int j = 0; j < stage_classifier.length; j++) {
                             sum = 0;
-                            double[] alpha = cascade.stage_classifier[j].alpha;
-                            Cascade.Feature[] feature = cascade.stage_classifier[j].feature;
-                            for (int k = 0; k < cascade.stage_classifier[j].count; k++) {
-                                Cascade.Feature feature_k = feature[k];
+                            double[] alpha = stage_classifier[j].alpha;
+                            Feature[] feature = current_feature_aa[j];
+                            for (int k = 0; k < stage_classifier[j].count; k++) {
+                                Feature feature_k = feature[k];
                                 double pmin;
                                 try {
                                     pmin = u8[feature_k.pz[0]][u8o[feature_k.pz[0]] + feature_k.px[0]];
@@ -187,7 +203,7 @@ public class ObjectDetector {
                                     sum += (shortcut) ? alpha[k * 2 + 1] : alpha[k * 2];
                                 }
                             }
-                            if (sum < cascade.stage_classifier[j].threshold) {
+                            if (sum < stage_classifier[j].threshold) {
                                 flag = false;
                                 break;
                             }
@@ -217,9 +233,6 @@ public class ObjectDetector {
 
     public List<Detection> clean(List<Detection> seq) {
         int i, j;
-        for (i = 0; i < cascade.stage_classifier.length; i++)
-            cascade.stage_classifier[i].feature = cascade.stage_classifier[i].orig_feature;
-        // seq = seq[0]; // [MC] how in the world did this work with this line in effect
         if (!(min_neighbors > 0))
             return seq;
         else {

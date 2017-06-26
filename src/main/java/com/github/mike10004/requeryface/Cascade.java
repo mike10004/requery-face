@@ -1,11 +1,15 @@
 package com.github.mike10004.requeryface;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Class that represents a cascade classifier.
@@ -15,7 +19,7 @@ public class Cascade {
     public final int count;
     public final int width;
     public final int height;
-    public final Classifier[] stage_classifier;
+    private final Classifier[] stage_classifier;
 
     @SuppressWarnings("unused")
     private Cascade() { // for deserialization
@@ -45,16 +49,11 @@ public class Cascade {
         }
     }
 
-    /**
-     * Saves each classifer's current features in another field.
-     * @see Classifier#storeFeatures()
-     */
-    public void storeFeaturesInClassifiers() {
-        if (stage_classifier != null) {
-            for (Classifier aStage_classifier : stage_classifier) {
-                aStage_classifier.storeFeatures();
-            }
-        }
+    public ImmutableList<Classifier> getStageClassifiers() {
+        assert stage_classifier != null;
+        return Stream.of(stage_classifier)
+                .map(sc -> new Classifier(sc.count, sc.copyFeatures(), sc.alpha.clone(), sc.threshold))
+                .collect(ImmutableList.toImmutableList());
     }
 
     public static class Feature {
@@ -74,13 +73,17 @@ public class Cascade {
         }
 
         public Feature(int size) {
+            this(size, new int[size], new int[size], new int[size], new int[size], new int[size], new int[size]);
+        }
+
+        private Feature(int size, int[] px, int[] py, int[] pz, int[] nx, int[] ny, int[] nz) {
             this.size = size;
-            this.px = new int[size];
-            this.pz = new int[size];
-            this.nx = new int[size];
-            this.nz = new int[size];
-            this.ny = new int[size];
-            this.py = new int[size];
+            this.px = checkNotNull(px);
+            this.pz = checkNotNull(pz);
+            this.nx = checkNotNull(nx);
+            this.nz = checkNotNull(nz);
+            this.ny = checkNotNull(ny);
+            this.py = checkNotNull(py);
         }
 
         @Override
@@ -89,13 +92,16 @@ public class Cascade {
                     "size=" + size +
                     '}';
         }
+
+        public Feature copy() {
+            return new Feature(size, px.clone(), py.clone(), pz.clone(), nx.clone(), ny.clone(), nz.clone());
+        }
     }
 
     public static class Classifier {
 
         public final int count;
-        public Feature[] orig_feature;
-        public Feature[] feature;
+        private final Feature[] feature;
         public final double[] alpha;
         public final double threshold;
 
@@ -104,6 +110,7 @@ public class Cascade {
             count = 0;
             alpha = null;
             threshold = Double.NaN;
+            feature = null;
         }
 
         @SuppressWarnings("unused") // deserialized
@@ -114,11 +121,8 @@ public class Cascade {
             this.threshold = threshold;
         }
 
-        /**
-         * Saves reference to {@link #feature} as {@link #orig_feature}.
-         */
-        public void storeFeatures() {
-            orig_feature = feature;
+        public Feature[] copyFeatures() {
+            return Stream.of(feature).map(Feature::copy).toArray(Feature[]::new);
         }
     }
 }

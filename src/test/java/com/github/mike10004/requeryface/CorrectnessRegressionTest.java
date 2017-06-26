@@ -58,7 +58,7 @@ public class CorrectnessRegressionTest {
 
     private static boolean containsSimilar(Detection needle, Iterable<Detection> haystack, double tolerance) {
         for (Detection possible : haystack) {
-            if (needle.equals(possible, tolerance)) {
+            if (needle.fuzzyEquals(possible, tolerance)) {
                 return true;
             }
         }
