@@ -2,12 +2,41 @@ package com.github.mike10004.requeryface;
 
 import com.google.common.math.DoubleMath;
 
+/**
+ * Class that represents a face detection.
+ */
 public class Detection {
 
-    public final double x, y, width, height;
+    /**
+     * X-coordinate of the upper left corner of a rectangle describing the face location.
+     */
+    public final double x;
+    /**
+     * Y-coordinate of the upper left corner of a rectangle describing the face location.
+     */
+    public final double y;
+    /**
+     * Width of the rectangle describing the face location.
+     */
+    public final double width;
+    /**
+     * Height of the rectangle describing the face location.
+     */
+    public final double height;
+
+    /**
+     * Number of neighbors accumulated by this location in the detection process.
+     */
     public final int neighbors;
+
+    /**
+     * Confidence of the classifier that this rectangle describes the location of a face.
+     */
     public final double confidence;
 
+    /**
+     * Constructs a new instance.
+     */
     public Detection(double x, double y, double width, double height, int neighbors, double confidence) {
         this.x = x;
         this.y = y;
@@ -38,6 +67,12 @@ public class Detection {
         return Double.compare(detection.confidence, confidence) == 0;
     }
 
+    /**
+     * Checks whether another detection instance is fuzzily equal to this one.
+     * @param detection the other detection
+     * @param tolerance tolerance to allow in determining rough equality of floating point field values
+     * @return true if this detection is fuzzily equal to another
+     */
     @SuppressWarnings("SimplifiableIfStatement")
     public boolean fuzzyEquals(Detection detection, double tolerance) {
         if (equals(detection)) {

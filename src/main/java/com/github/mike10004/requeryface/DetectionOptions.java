@@ -1,14 +1,28 @@
-/*
- * (c) 2017 Novetta
- *
- * Created by mike
- */
 package com.github.mike10004.requeryface;
 
+/**
+ * Options that can be used to parameterize a detection effort.
+ */
 public class DetectionOptions {
 
+    /**
+     * Interval parameter for cascade.
+     *
+     * <p><i>Editor's note: I'm not quite sure about this, but I imagine this refers to </i>"Interval images between the
+     * full size image and the half size one. For example, 2 will generate 2 images in between full size image and
+     * half size one: image with full size, image with 5/6 size, image with 2/3 size, image with 1/2 size."
+     */
     public final int interval;
+
+    /**
+     * Minimum number of neighbors to require in Haar cascade.
+     * See <a href="https://stackoverflow.com/questions/22249579/opencv-detectmultiscale-minneighbors-parameter">reference</a>.
+     */
     public final int min_neighbors;
+
+    /**
+     * Confidence threshold to apply when cleaning an initial list of detections.
+     */
     public final double confidence;
 
     public DetectionOptions(int interval, int min_neighbors, double confidence) {

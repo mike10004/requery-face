@@ -2,15 +2,11 @@ package com.github.mike10004.requeryface;
 
 import com.google.common.primitives.UnsignedBytes;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -18,7 +14,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Implementation of a canvas that uses a buffered image to store the underlying data.
+ * Implementation of a canvas that uses a buffered image to store the underlying image data.
  */
 public class BufferedCanvas extends Canvas<BufferedImage> {
 
@@ -37,12 +33,12 @@ public class BufferedCanvas extends Canvas<BufferedImage> {
     }
 
     @Override
-    public BufferedImage getSubimage(int x, int y, int width, int height) {
+    public BufferedImage getRegion(int x, int y, int width, int height) {
         return image.getSubimage(x, y, width, height);
     }
 
     @Override
-    public void drawImage(BufferedImage sourceImage, int destX, int destY, int destW, int destH) {
+    public void drawRegion(BufferedImage sourceImage, int destX, int destY, int destW, int destH) {
         Graphics2D g = image.createGraphics();
         double sx = (double) destW / (double) sourceImage.getWidth();
         double sy = (double) destH / (double) sourceImage.getHeight();
@@ -52,7 +48,7 @@ public class BufferedCanvas extends Canvas<BufferedImage> {
 
     /**
      * Gets data as a sequence of RGBA pixel quartets.
-     * @return
+     * @return an array of integers representing the image data
      */
     @Override
     public int[] getRgbaData() {
@@ -66,16 +62,6 @@ public class BufferedCanvas extends Canvas<BufferedImage> {
             }
         }
         return rgba;
-    }
-
-    private static int clamp(int gray) {
-        if (gray > 255) {
-            gray = 255;
-        }
-        if (gray < 0) {
-            gray = 0;
-        }
-        return gray;
     }
 
     static BufferedImage toGrayscale(BufferedImage image) {

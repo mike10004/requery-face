@@ -12,7 +12,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Class that represents a cascade classifier.
+ * Value class that represents a cascade classifier.
  */
 public class Cascade {
 
@@ -29,6 +29,7 @@ public class Cascade {
         stage_classifier = null;
     }
 
+    @SuppressWarnings("unused")
     public Cascade(int count, int width, int height, Classifier[] stage_classifier) {
         this.count = count;
         this.width = width;
