@@ -1,53 +1,51 @@
 package com.github.mike10004.requeryface;
 
-import com.google.common.io.Files;
+import com.google.common.io.ByteStreams;
+import com.google.common.primitives.UnsignedBytes;
 import org.junit.Test;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.awt.image.DataBufferByte;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static com.google.common.base.Preconditions.checkArgument;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class BufferedCanvasTest {
-
-    @Test
-    public void getByteData() throws Exception {
-        BufferedImage image = Tests.readImageResource("/gwb1.jpg");
-        BufferedCanvas canvas = BufferedCanvas.from(image);
-        int[] data = canvas.getByteData();
-        long[] histo = new long[256];
-        for (int i = 0; i < data.length; i++) {
-            int value = data[i];
-            if (value < 0 || value > 255) {
-                fail("invalid value " + value + " at index " + i);
-            }
-            histo[value]++;
-        }
-        System.out.format("%s%n", Arrays.toString(histo));
-    }
 
     @Test
     public void getRgbaData() throws Exception {
         BufferedImage image = Tests.readImageResource("/gwb1.jpg");
         BufferedCanvas canvas = BufferedCanvas.from(image);
-
         int[] data = canvas.getRgbaData();
         int numChannels = 3 + 1;
         assertEquals("dimensions", image.getWidth() * image.getHeight() * numChannels, data.length);
-        int[] expected = {146, 146, 146, 255, 146, 146, 146, 255};
+        int[] expected = {145, 145, 145, 255, 145, 145, 145, 255};
         int[] actual = Arrays.copyOf(data, expected.length);
-
         assertArrayEquals("data", expected, actual);
     }
 
     @Test
-    public void grayscale() throws Exception {
-        BufferedImage image = Tests.readImageResource("/gwb1.jpg");
-        BufferedCanvas canvas = BufferedCanvas.from(image);
-        byte[] bytes = canvas.writePng();
-        File file = new File("target", "image.png");
-        Files.write(bytes, file);
-        System.out.format("wrote: %s%n", file);
+    public void toGrayscale() throws Exception {
+        byte[] reference = ByteStreams.toByteArray(getClass().getResourceAsStream("/gwb1.intensity.dat"));
+        BufferedImage image = BufferedCanvas.toGrayscale(Tests.readImageResource("/gwb1.jpg"));
+        byte[] byteData = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+        int maxDiff = maxDiff(reference, byteData);
+        assertTrue("max diff too large", maxDiff <= 1);
     }
+
+    private static int maxDiff(byte[] a, byte[] b) {
+        checkArgument(a.length > 0 && a.length == b.length);
+        int max = 0;
+        for (int i = 0; i < a.length; i++) {
+            int diff = Math.abs(UnsignedBytes.toInt(a[i]) - UnsignedBytes.toInt(b[i]));
+            if (diff > max) {
+                max = diff;
+            }
+        }
+        return max;
+    }
+
 }
