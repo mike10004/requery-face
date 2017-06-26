@@ -2,7 +2,6 @@ package com.github.mike10004.requeryface.client;
 
 import com.github.mike10004.requeryface.BufferedCanvas;
 import com.github.mike10004.requeryface.Detection;
-import com.github.mike10004.requeryface.DetectionOptions;
 import com.github.mike10004.requeryface.RequeryFaceDetector;
 import com.github.mike10004.requeryface.Tests;
 
@@ -19,7 +18,7 @@ public class RequeryFaceDetectorTest {
         RequeryFaceDetector detector = new RequeryFaceDetector();
         BufferedImage image = Tests.readImageResource("/gwb1.jpg");
         long startTime = System.currentTimeMillis();
-        List<Detection> detections = detector.detect(BufferedCanvas.from(image), DetectionOptions.getDefault());
+        List<Detection> detections = detector.detect(BufferedCanvas.from(image));
         long endTime = System.currentTimeMillis();
         System.out.format("%d detections in %.1f seconds%n", detections.size(), (endTime - startTime) / 1000f);
         assertEquals("num detections", 1, detections.size());

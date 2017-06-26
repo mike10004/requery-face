@@ -18,6 +18,10 @@ public class RequeryFaceDetector {
         this.cascadeFactory = checkNotNull(cascadeFactory);
     }
 
+    public List<Detection> detect(Canvas<?> canvas) {
+        return detect(canvas, DetectionOptions.getDefault());
+    }
+
     public List<Detection> detect(Canvas<?> canvas, DetectionOptions options) {
         Cascade cascade = cascadeFactory.get();
         ObjectDetector detector = createObjectDetector(cascade, canvas, options);
