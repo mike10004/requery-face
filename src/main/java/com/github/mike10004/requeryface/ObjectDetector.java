@@ -117,10 +117,16 @@ public class ObjectDetector {
                     }
                 }
             }
+            int[] u8_0 = pyr[i * 4].getRgbaData();
+            int[] u8_1 = pyr[i * 4 + next * 4].getRgbaData();
             for (int q = 0; q < 4; q++) {
-                int[] pyri4Data = pyr[i * 4].getRgbaData();
-                int[][] u8 = new int[][]{pyri4Data, pyr[i * 4 + next * 4].getRgbaData(), pyr[i * 4 + next * 8 + q].getRgbaData()};
-                int[] u8o = new int[]{dx[q] * 8 + dy[q] * pyr[i * 4].width * 8, dx[q] * 4 + dy[q] * pyr[i * 4 + next * 4].width * 4, 0};
+                int[] u8_2 = pyr[i * 4 + next * 8 + q].getRgbaData();
+                int[][] u8 = new int[][]{u8_0, u8_1, u8_2};
+                int[] u8o = new int[]{
+                        dx[q] * 8 + dy[q] * pyr[i * 4].width * 8,
+                        dx[q] * 4 + dy[q] * pyr[i * 4 + next * 4].width * 4,
+                        0
+                };
                 for (int y = 0; y < qh; y++) {
                     for (int x = 0; x < qw; x++) {
                         double sum = 0;
