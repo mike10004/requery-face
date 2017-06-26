@@ -22,7 +22,7 @@ public abstract class Canvas<T> {
     public abstract int[] getRgbaData();
 
     public abstract T getSubimage(int x, int y, int width, int height);
-    public abstract void drawImage(Canvas canvas, int x, int y, int width, int height, int destX, int destY, int destW, int destH);
+    public abstract void drawImage(T source, int destX, int destY, int destW, int destH);
     public abstract Canvas<T> createCanvas(int width, int height);
     public abstract Canvas<T> createCanvas(int width, int height, T imageData);
 

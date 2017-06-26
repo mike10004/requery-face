@@ -39,12 +39,10 @@ public class BufferedCanvas extends Canvas<BufferedImage> {
     }
 
     @Override
-    public void drawImage(Canvas canvas, int x, int y, int width, int height, int destX, int destY, int destW, int destH) {
-        BufferedCanvas source = (BufferedCanvas) canvas;
-        BufferedImage sourceImage = source.image.getSubimage(x, y, width, height);
+    public void drawImage(BufferedImage sourceImage, int destX, int destY, int destW, int destH) {
         Graphics2D g = image.createGraphics();
-        double sx = (double) destW / (double) width;
-        double sy = (double) destH / (double) height;
+        double sx = (double) destW / (double) sourceImage.getWidth();
+        double sy = (double) destH / (double) sourceImage.getHeight();
         AffineTransformOp op = new AffineTransformOp(AffineTransform.getScaleInstance(sx, sy), AffineTransformOp.TYPE_BICUBIC);
         g.drawImage(sourceImage, op, destX, destY);
     }

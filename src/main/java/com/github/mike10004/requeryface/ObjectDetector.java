@@ -43,23 +43,23 @@ public class ObjectDetector {
 
         for (int i = 1; i <= interval; i++) {
             pyr[i * 4] = newCanvas(canvas, (int) Math.floor(pyr[0].width / Math.pow(scale, i)), (int) Math.floor(pyr[0].height / Math.pow(scale, i)));
-            pyr[i * 4].drawImage(pyr[0], 0, 0, pyr[0].width, pyr[0].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
+            pyr[i * 4].drawImage(pyr[0].getSubimage( 0, 0, pyr[0].width, pyr[0].height), 0, 0, pyr[i * 4].width, pyr[i * 4].height);
             ret[i * 4] = newCanvas(canvas, pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
         }
         for (int i = next; i < scale_upto + next * 2; i++) {
             pyr[i * 4] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4].drawImage(pyr[i * 4 - next * 4], 0, 0, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4].width, pyr[i * 4].height);
+            pyr[i * 4].drawImage(pyr[i * 4 - next * 4].getSubimage( 0, 0, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height), 0, 0, pyr[i * 4].width, pyr[i * 4].height);
             ret[i * 4] = newCanvas(canvas, pyr[i * 4].width, pyr[i * 4].height, pyr[i * 4].getSubimage(0, 0, pyr[i * 4].width, pyr[i * 4].height) );
         }
         for (int i = next * 2; i < scale_upto + next * 2; i++) {
             pyr[i * 4 + 1] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4 + 1].drawImage(pyr[i * 4 - next * 4], 1, 0, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height, 0, 0, pyr[i * 4 + 1].width - 2, pyr[i * 4 + 1].height);
+            pyr[i * 4 + 1].drawImage(pyr[i * 4 - next * 4].getSubimage(1, 0, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height), 0, 0, pyr[i * 4 + 1].width - 2, pyr[i * 4 + 1].height);
             ret[i * 4 + 1] = newCanvas(canvas, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height, pyr[i * 4 + 1].getSubimage(0, 0, pyr[i * 4 + 1].width, pyr[i * 4 + 1].height) );
             pyr[i * 4 + 2] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4 + 2].drawImage(pyr[i * 4 - next * 4], 0, 1, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height - 2);
+            pyr[i * 4 + 2].drawImage(pyr[i * 4 - next * 4].getSubimage(0, 1, pyr[i * 4 - next * 4].width, pyr[i * 4 - next * 4].height - 1), 0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height - 2);
             ret[i * 4 + 2] = newCanvas(canvas, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height, pyr[i * 4 + 2].getSubimage(0, 0, pyr[i * 4 + 2].width, pyr[i * 4 + 2].height) );
             pyr[i * 4 + 3] = newCanvas(canvas, (int) Math.floor(pyr[i * 4 - next * 4].width / 2), (int) Math.floor(pyr[i * 4 - next * 4].height / 2));
-            pyr[i * 4 + 3].drawImage(pyr[i * 4 - next * 4], 1, 1, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height - 1, 0, 0, pyr[i * 4 + 3].width - 2, pyr[i * 4 + 3].height - 2);
+            pyr[i * 4 + 3].drawImage(pyr[i * 4 - next * 4].getSubimage(1, 1, pyr[i * 4 - next * 4].width - 1, pyr[i * 4 - next * 4].height - 1), 0, 0, pyr[i * 4 + 3].width - 2, pyr[i * 4 + 3].height - 2);
             ret[i * 4 + 3] = newCanvas(canvas, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height, pyr[i * 4 + 3].getSubimage(0, 0, pyr[i * 4 + 3].width, pyr[i * 4 + 3].height) );
         }
         return ret;
