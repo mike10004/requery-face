@@ -23,21 +23,18 @@ The gist of it is something like this:
 
     BufferedImage image = ImageIO.read(imageFile);
     RequeryFaceDetector detector = new RequeryFaceDetector();
-    Cascade cascade = Cascade.getDefault();
-    DetectionOptions options = DetectionOptions.getDefault();
-    List<Detection> detections = detector.detect(cascade, BufferedCanvas.from(image), options);
+    List<Detection> detections = detector.detect(BufferedCanvas.from(image));
 
 It has never been tested with anything but the default set of classifiers and 
 the default detection options. Use at your own risk. 
 
 ## To do
 
-Some low-hanging fruit to improve the code:
+Some suggestions on how to improve the code:
 
 * avoid creating unnecessary arrays, or reuse them where possible
-* make the Cascade object immutable
 * be more efficient in creating image data integer arrays (instead of using 
-  a lot of Raster `getSample(x, y)` calls)
+  a lot of `Raster.getSample(x, y)` calls)
 * use single-channel representations of images (instead of 4-channel RGBA)
 
 [liuliu]: http://libccv.org/
