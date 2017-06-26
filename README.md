@@ -38,5 +38,6 @@ Some low-hanging fruit to improve the code:
 * make the Cascade object immutable
 * be more efficient in creating image data integer arrays (instead of using 
   a lot of Raster `getSample(x, y)` calls)
+* use single-channel representations of images (instead of 4-channel RGBA)
 
 [liuliu]: http://libccv.org/
