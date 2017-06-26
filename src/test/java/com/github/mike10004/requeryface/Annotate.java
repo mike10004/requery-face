@@ -18,7 +18,7 @@ public class Annotate {
 
     public static void main(String[] args) throws Exception {
         File dir = new File("src/test/resources/flickr-publicdomain");
-        Collection<File> files = org.apache.commons.io.FileUtils.listFiles(dir, new String[]{"jpg"}, false);
+        Collection<File> files = org.apache.commons.io.FileUtils.listFiles(dir, new String[]{"jpg", "jpeg"}, false);
         FaceImageProcessor processor = new FaceImageProcessor();
         processor.detectAll(files, new DetectionListener() {
             private final Stroke annotationStroke = new BasicStroke(3, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER);

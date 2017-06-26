@@ -5,7 +5,6 @@ Currently, it's a pretty quick and dirty job. It is *not* any of these things:
 
 * fast
 * robust
-* thread-safe
 * memory-conserving
 
 But if what you're looking for is Java face detection, and you're not all that
@@ -32,9 +31,7 @@ the default detection options. Use at your own risk.
 
 Some suggestions on how to improve the code:
 
-* avoid creating unnecessary arrays, or reuse them where possible
-* be more efficient in creating image data integer arrays (instead of using 
-  a lot of `Raster.getSample(x, y)` calls)
 * use single-channel representations of images (instead of 4-channel RGBA)
+* parallelize the image data analysis part 
 
 [liuliu]: http://libccv.org/
